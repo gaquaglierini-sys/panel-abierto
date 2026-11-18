@@ -1,0 +1,13 @@
+{
+  "name": "panel-abierto",
+  "version": "0.1.0",
+  "description": "Panel gratis y de código abierto para vender productos digitales con Meta Ads: gasto, ventas reales y ROAS por oferta.",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

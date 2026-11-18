@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Abierto</title>
+  <meta name="description" content="Panel gratuito y de código abierto para vender productos digitales con Meta Ads: gasto, ventas reales de la tienda, ROAS, alertas por anuncio y un asistente con IA.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cpath d='M8 22V12m6 10V8m6 14v-6m6 6V14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <a class="skip" href="#principal">Ir al contenido</a>
+  <header class="topbar">
+    <div class="wrap top">
+      <div class="brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9"/><path d="M8 22V12m6 10V8m6 14v-6m6 6V14"/></svg>
+        <div>
+          <h1>Panel Abierto</h1>
+          <p>Meta Ads y ventas reales, en una pantalla</p>
+        </div>
+      </div>
+      <div class="tools">
+        <div class="seg" role="group" aria-label="Período" id="periodos">
+          <button type="button" data-p="hoy">Hoy</button>
+          <button type="button" data-p="ayer">Ayer</button>
+          <button type="button" data-p="7">7 días</button>
+          <button type="button" data-p="30">30 días</button>
+          <button type="button" data-p="todo">Todo</button>
+        </div>
+        <span class="range">
+          <label class="sr" for="desde">Desde</label><input type="date" id="desde">
+          <span aria-hidden="true">→</span>
+          <label class="sr" for="hasta">Hasta</label><input type="date" id="hasta">
+        </span>
+        <button class="btn icon" type="button" id="tema" aria-label="Cambiar entre tema claro y oscuro" title="Tema claro u oscuro">◐</button>
+        <button class="btn primary" type="button" id="abrir-datos">Datos</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="principal">
+    <div class="banner" id="banner" hidden>
+      <p><b>Estás viendo datos de ejemplo.</b> Son inventados, para mostrar cómo funciona cada parte. Carga los tuyos desde <b>Datos</b>.</p>
+      <button class="btn small" type="button" id="banner-datos">Cargar mis datos</button>
+    </div>
+    <div class="banner warn" id="aviso-monedas" hidden></div>
+
+    <section class="kpis" id="kpis" aria-label="Totales del período"></section>
+
+    <section class="sec">
+      <div class="sec-head">
+        <h2>Qué hacer hoy</h2>
+        <p>Cada anuncio según tus reglas · <button class="linklike" type="button" id="editar-reglas">editar reglas</button></p>
+      </div>
+      <div class="chips" id="resumen-alertas"></div>
+      <div class="box table-scroll" id="alertas"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec-head">
+        <h2>Ofertas</h2>
+        <p id="leyenda-tono"></p>
+      </div>
+      <div class="grid" id="ofertas"></div>
+    </section>
+
+    <section class="split wide-left">
+      <div class="box sec">
+        <div class="sec-head"><h2>Día por día</h2><p>Gasto en Meta contra ingresos, en USD</p></div>
+        <div class="chart" id="grafico"></div>
+      </div>
+      <div class="box sec ai" id="asistente">
+        <div class="sec-head">
+          <h2><span class="spark" aria-hidden="true">✦</span> Asistente</h2>
+          <label class="inline">
+            <span class="sr">Idioma de la respuesta</span>
+            <select id="ia-idioma">
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint">Claude lee los números de este período y te explica en palabras simples qué conviene apagar, escalar o revisar.</p>
+        <button class="btn primary" type="button" id="ia-explicar">Explicar mis números</button>
+        <div class="ai-out" id="ia-salida" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="box sec">
+        <div class="sec-head"><h2>Detalle por oferta</h2></div>
+        <div class="table-scroll" id="tabla"></div>
+      </div>
+      <div class="box sec">
+        <div class="sec-head"><h2>Sin asignar</h2><p>Campañas y ventas que no coinciden con ninguna oferta</p></div>
+        <div id="sin-asignar"></div>
+      </div>
+    </section>
+
+    <p class="foot">Panel Abierto · código abierto con licencia MIT · tus datos quedan en este navegador.</p>
+  </main>
+
+  <dialog id="datos" aria-labelledby="datos-titulo">
+    <div class="dlg-head">
+      <h2 id="datos-titulo">Datos</h2>
+      <button class="btn small" type="button" id="cerrar-datos">Cerrar</button>
+    </div>
+    <div class="dlg-body">
+      <div class="tabs" role="tablist" id="tabs">
+        <button type="button" role="tab" data-tab="importar" aria-selected="true">Importar</button>
+        <button type="button" role="tab" data-tab="meta" aria-selected="false">Conectar Meta</button>
+        <button type="button" role="tab" data-tab="ofertas" aria-selected="false">Ofertas</button>
+        <button type="button" role="tab" data-tab="reglas" aria-selected="false">Reglas</button>
+        <button type="button" role="tab" data-tab="monedas" aria-selected="false">Monedas</button>
+        <button type="button" role="tab" data-tab="ia" aria-selected="false">Asistente IA</button>
+        <button type="button" role="tab" data-tab="respaldo" aria-selected="false">Respaldo</button>
+      </div>
+      <div id="msg" role="status" aria-live="polite"></div>
+
+      <div data-panel="importar" class="sec">
+        <fieldset class="group">
+          <legend>Gasto de Meta Ads</legend>
+          <p class="hint">En el Administrador de anuncios: nivel <b>Anuncios</b> (o Campañas) → Desglose → Por tiempo → Día → Exportar → CSV. Debe traer Día, Nombre de la campaña e Importe gastado; con Nombre del anuncio, las alertas van anuncio por anuncio.</p>
+          <div class="row">
+            <div class="field"><label for="meta-moneda">Moneda (si el archivo no la indica)</label><select id="meta-moneda" class="sel-moneda"></select></div>
+            <div class="field"><label for="csv-meta">Archivo CSV</label><input type="file" id="csv-meta" accept=".csv,text/csv"></div>
+          </div>
+        </fieldset>
+        <fieldset class="group">
+          <legend>Ventas</legend>
+          <div class="row">
+            <div class="field"><label for="tienda-plataforma">Plataforma</label>
+              <select id="tienda-plataforma">
+                <option value="impultienda">Impultienda</option>
+                <option value="hotmart">Hotmart</option>
+                <option value="mercadopago">Mercado Pago</option>
+                <option value="stripe">Stripe</option>
+                <option value="generica">Otra (CSV genérico)</option>
+              </select>
+            </div>
+            <div class="field"><label for="tienda-moneda">Moneda (si el archivo no la indica)</label><select id="tienda-moneda" class="sel-moneda"></select></div>
+            <div class="field"><label for="csv-tienda">Archivo CSV</label><input type="file" id="csv-tienda" accept=".csv,text/csv"></div>
+          </div>
+          <p class="hint">Se necesita una columna de fecha y una de monto. Con <code>utm_campaign</code> (o <code>src</code> en Hotmart, <code>referencia externa</code> en Mercado Pago) cada venta va a su oferta; con <code>utm_content</code> (o <code>sck</code>), a su anuncio. Si hay columna de estado, se cuentan solo las ventas aprobadas o pagadas.</p>
+          <div id="mapeo" hidden></div>
+        </fieldset>
+        <p class="hint">Plantillas para probar: <a href="ejemplos/meta-ads-ejemplo.csv" download>Meta Ads</a> · <a href="ejemplos/impultienda-ejemplo.csv" download>Impultienda</a> · <a href="ejemplos/hotmart-ejemplo.csv" download>Hotmart</a> · <a href="ejemplos/mercadopago-ejemplo.csv" download>Mercado Pago</a> · <a href="ejemplos/stripe-ejemplo.csv" download>Stripe</a>. Al importar un archivo se reemplazan los datos de esa misma plataforma en esas fechas: se puede volver a subir sin duplicar nada ni pisar las otras.</p>
+      </div>
+
+      <div data-panel="meta" class="sec" hidden>
+        <p class="hint">Lee el gasto por anuncio directo de la API de Marketing de Meta. La clave queda solo en esta pestaña y se borra al cerrarla. Se obtiene en developers.facebook.com → Herramientas → Explorador de la API Graph, con el permiso <code>ads_read</code>.</p>
+        <div class="row">
+          <div class="field"><label for="meta-cuenta">Número de cuenta publicitaria</label><input id="meta-cuenta" inputmode="numeric" placeholder="solo dígitos" autocomplete="off"></div>
+          <div class="field"><label for="meta-clave">Clave de acceso de Meta</label><input id="meta-clave" type="password" autocomplete="off"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="meta-desde">Desde</label><input id="meta-desde" type="date"></div>
+          <div class="field"><label for="meta-hasta">Hasta</label><input id="meta-hasta" type="date"></div>
+          <div class="field"><label for="meta-moneda-api">Moneda de la cuenta</label><select id="meta-moneda-api" class="sel-moneda"></select></div>
+          <button class="btn primary" type="button" id="meta-traer">Traer gasto</button>
+        </div>
+      </div>
+
+      <div data-panel="ofertas" class="sec" hidden>
+        <p class="hint">Cada oferta junta las campañas cuyo nombre contiene alguno de sus textos (sin importar mayúsculas ni tildes). La misma regla vale para el <code>utm_campaign</code> de las ventas.</p>
+        <div class="row">
+          <div class="field"><label for="cfg-escala">ROAS para escalar (verde)</label><input id="cfg-escala" type="number" step="0.1" min="0"></div>
+          <div class="field"><label for="cfg-corte">ROAS mínimo (abajo pierde)</label><input id="cfg-corte" type="number" step="0.1" min="0"></div>
+        </div>
+        <div id="lista-ofertas" class="sec"></div>
+        <div class="tools">
+          <button class="btn" type="button" id="agregar-oferta">+ Agregar oferta</button>
+          <button class="btn primary" type="button" id="guardar-ofertas">Guardar</button>
+        </div>
+      </div>
+
+      <div data-panel="reglas" class="sec" hidden>
+        <p class="hint">Las reglas marcan cada anuncio con una acción. Se revisan de arriba hacia abajo: la primera que se cumple decide. Todas las condiciones de una regla tienen que cumplirse a la vez. Los montos van en USD.</p>
+        <div id="lista-reglas" class="sec"></div>
+        <div class="tools">
+          <button class="btn" type="button" id="agregar-regla">+ Agregar regla</button>
+          <button class="btn" type="button" id="reglas-ejemplo">Volver a las reglas de ejemplo</button>
+          <button class="btn primary" type="button" id="guardar-reglas">Guardar</button>
+        </div>
+      </div>
+
+      <div data-panel="monedas" class="sec" hidden>
+        <p class="hint">Todo se muestra en dólares. Indica cuántas unidades de cada moneda equivalen a 1 USD. <b>Las tasas que vienen son de ejemplo:</b> actualízalas con la cotización que uses.</p>
+        <div id="lista-tasas" class="tasas"></div>
+        <div class="tools">
+          <button class="btn" type="button" id="agregar-tasa">+ Agregar moneda</button>
+          <button class="btn primary" type="button" id="guardar-tasas">Guardar</button>
+        </div>
+      </div>
+
+      <div data-panel="ia" class="sec" hidden>
+        <p class="hint">El asistente usa <b>tu propia clave de la API de Claude</b> (se crea en console.anthropic.com → API Keys). La consulta va directo de este navegador a <code>api.anthropic.com</code> y el uso se cobra en tu cuenta de Anthropic. La clave nunca se sube a ningún otro lado ni se incluye en los respaldos.</p>
+        <div class="field"><label for="ia-clave">Clave de la API de Claude</label><input id="ia-clave" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+        <label class="check"><input type="checkbox" id="ia-recordar" checked> Recordarla en este navegador</label>
+        <div class="tools">
+          <button class="btn primary" type="button" id="ia-guardar">Guardar clave</button>
+          <button class="btn danger" type="button" id="ia-borrar">Borrar clave</button>
+        </div>
+      </div>
+
+      <div data-panel="respaldo" class="sec" hidden>
+        <p class="hint">Todo se guarda en este navegador. Descarga un respaldo para pasarlo a otra computadora (no incluye claves).</p>
+        <div class="tools">
+          <button class="btn" type="button" id="exportar">Descargar respaldo (.json)</button>
+          <label class="btn" for="importar-json">Subir respaldo</label>
+          <input type="file" id="importar-json" accept=".json,application/json" class="sr">
+          <button class="btn" type="button" id="volver-ejemplo">Volver a los ejemplos</button>
+          <button class="btn danger" type="button" id="borrar-todo">Borrar todo</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="src/csv.js"></script>
+  <script src="src/meta.js"></script>
+  <script src="src/calc.js"></script>
+  <script src="src/ejemplo.js"></script>
+  <script src="src/asistente.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

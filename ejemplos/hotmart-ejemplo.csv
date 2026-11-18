@@ -1,0 +1,5 @@
+"Código de la transacción","Fecha de la transacción","Producto","Estado de la transacción","Precio total","Moneda de compra","SRC","SCK"
+"HP0000000001","16/11/2026 10:21:00","Huerta en el balcón","Aprobado","12,90","USD","HUERTA | LATAM | VENTAS","V1 · antes y después"
+"HP0000000002","16/11/2026 18:02:00","Huerta en el balcón","Completo","232,20","MXN","HUERTA | LATAM | VENTAS","V1 · antes y después"
+"HP0000000003","17/11/2026 09:45:00","Huerta en el balcón","Reembolsado","12,90","USD","HUERTA | LATAM | VENTAS","V1 · antes y después"
+"HP0000000004","17/11/2026 21:30:00","Huerta en el balcón","Aprobado","52.890,00","COP","HUERTA | LATAM | VENTAS","IMG · lista de semillas"

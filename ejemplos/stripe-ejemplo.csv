@@ -1,0 +1,4 @@
+id,Created date (UTC),Amount,Currency,Status,utm_campaign (metadata),utm_content (metadata)
+py_ejemplo_001,2026-11-16 14:03:11,12.90,usd,Paid,HUERTA | LATAM | VENTAS,V1 · antes y después
+py_ejemplo_002,2026-11-16 22:47:50,12.90,usd,Failed,HUERTA | LATAM | VENTAS,V1 · antes y después
+py_ejemplo_003,2026-11-17 12:30:05,11.90,eur,Paid,HUERTA | LATAM | VENTAS,IMG · lista de semillas
