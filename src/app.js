@@ -600,6 +600,25 @@
     aviso('Clave borrada de este navegador.', 'ok');
   });
 
+  /** Descarga la tabla "Qué hacer hoy" completa (todos los anuncios del período) como CSV. */
+  $('exportar-alertas').addEventListener('click', () => {
+    const { d } = datosDelPeriodo();
+    const lista = evaluarReglas(porAnuncio(d), state.config.reglas);
+    const orden = { rojo: 0, amarillo: 1, verde: 2 };
+    lista.sort((a, b) => (orden[a.color] ?? 3) - (orden[b.color] ?? 3) || b.gasto - a.gasto);
+    const celda = (v) => {
+      let t = v == null ? '' : String(v);
+      if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = `'${t}`; // evita fórmulas al abrir en Excel
+      return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
+    const filas = [['Acción', 'Anuncio', 'Campaña', 'Oferta', 'Gasto (USD)', 'Ventas', 'Ingresos (USD)', 'ROAS', 'Costo por venta (USD)']]
+      .concat(lista.map((u) => [u.accion || 'Sin alerta', u.anuncio, u.campana, u.oferta || '', u.gasto, u.ventas, u.ingresos, u.roas, u.costoPorVenta]));
+    const csv = '\ufeff' + filas.map((f) => f.map(celda).join(',')).join('\r\n') + '\r\n';
+    const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: `que-hacer-hoy-${hoy()}.csv` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
   $('exportar').addEventListener('click', () => {
     const blob = new Blob([JSON.stringify(state, null, 1)], { type: 'application/json' });
     const a = h('a', { href: URL.createObjectURL(blob), download: `panel-abierto-${hoy()}.json` });
