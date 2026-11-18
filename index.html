@@ -7,6 +7,16 @@
   <meta name="description" content="Panel gratuito y de código abierto para vender productos digitales con Meta Ads: gasto, ventas reales de la tienda, ROAS, alertas por anuncio y un asistente con IA.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cpath d='M8 22V12m6 10V8m6 14v-6m6 6V14' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="src/styles.css">
+  <script>
+    /* Aplica el tema elegido antes de dibujar, para que no haya un parpadeo de colores al cargar. */
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('panel-abierto:tema'); } catch (e) {}
+      var f = new URLSearchParams(location.search).get('tema');
+      if (f === 'claro') t = 'light'; else if (f === 'oscuro') t = 'dark';
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    })();
+  </script>
 </head>
 <body>
   <a class="skip" href="#principal">Ir al contenido</a>
