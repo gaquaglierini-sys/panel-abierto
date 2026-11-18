@@ -27,6 +27,22 @@ test('parseDate pasa varios formatos a AAAA-MM-DD', () => {
   assert.equal(csv.parseDate('2026-11-04 23:10:00'), '2026-11-04');
   assert.equal(csv.parseDate('4/11/2026 10:00'), '2026-11-04');
   assert.equal(csv.parseDate('Total'), null);
+  assert.equal(csv.parseDate('11/04/2026', 'mdy'), '2026-11-04');
+  assert.equal(csv.parseDate('11/04/2026'), '2026-04-11');
+});
+
+test('fechas mes/día/año de EE. UU.: se detectan cuando algún día es mayor a 12', () => {
+  assert.equal(csv.detectDateFormat(['11/04/2026', '11/25/2026']), 'mdy');
+  assert.equal(csv.detectDateFormat(['25/11/2026', '11/04/2026']), 'dmy');
+  assert.equal(csv.detectDateFormat(['11/04/2026', '12/05/2026']), 'dmy'); // ambiguo: día/mes/año
+  assert.equal(csv.detectDateFormat(['2026-11-25', 'Total']), 'dmy');
+  const us = 'Date,Amount,Status\n11/04/2026,10,paid\n11/25/2026,20,paid\n';
+  assert.deepEqual(csv.parseStoreCSV(us).map((r) => r.fecha), ['2026-11-04', '2026-11-25']);
+  // La opción manual gana sobre la detección.
+  assert.equal(csv.parseStoreCSV('Date,Amount\n11/04/2026,10\n', { formatoFecha: 'mdy' })[0].fecha, '2026-11-04');
+  assert.equal(csv.parseStoreCSV('Date,Amount\n11/04/2026,10\n')[0].fecha, '2026-04-11');
+  const metaUs = 'Day,Campaign name,Amount spent (USD)\n11/25/2026,A,5\n11/04/2026,A,7\n';
+  assert.deepEqual(csv.parseMetaCSV(metaUs).map((r) => r.fecha), ['2026-11-25', '2026-11-04']);
 });
 
 test('parseCSV respeta comillas, separador punto y coma y BOM', () => {
