@@ -278,7 +278,13 @@
     out.replaceChildren(h('p', { class: 'muted loading' }, $('ia-idioma').value === 'en' ? 'Reading your numbers…' : 'Leyendo tus números…'));
     try {
       const texto = await IA.explicar({ clave: claveIA, resumen: resumenParaIA(), idioma: $('ia-idioma').value });
-      out.replaceChildren(IA.aNodos(texto), h('p', { class: 'muted small' }, `Respuesta de Claude (${IA.MODELO}). Revisa los números antes de tocar tus campañas.`));
+      const en = $('ia-idioma').value === 'en';
+      const copiar = h('button', { class: 'btn small', type: 'button', onclick: async () => {
+        try { await navigator.clipboard.writeText(texto); copiar.textContent = en ? 'Copied' : 'Copiado'; }
+        catch (e) { copiar.textContent = en ? 'Could not copy' : 'No se pudo copiar'; }
+        setTimeout(() => { copiar.textContent = en ? 'Copy answer' : 'Copiar respuesta'; }, 2000);
+      } }, en ? 'Copy answer' : 'Copiar respuesta');
+      out.replaceChildren(IA.aNodos(texto), h('p', { class: 'muted small' }, `Respuesta de Claude (${IA.MODELO}). Revisa los números antes de tocar tus campañas.`), copiar);
     } catch (err) {
       out.replaceChildren(h('p', { class: 'msg err' }, err.message));
     } finally { btn.disabled = false; }
