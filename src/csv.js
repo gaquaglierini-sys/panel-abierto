@@ -78,14 +78,36 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  /** "2026-11-04", "2026-11-04 10:00:00", "04/11/2026" (día/mes/año) → "2026-11-04". Inválida → null. */
-  function parseDate(v) {
+  /**
+   * "2026-11-04", "2026-11-04 10:00:00", "04/11/2026" → "2026-11-04". Inválida → null.
+   * Con números sueltos el orden es día/mes/año ('dmy', por defecto) o mes/día/año ('mdy', EE. UU.).
+   */
+  function parseDate(v, formato) {
     const s = String(v || '').trim();
     let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
     if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
     m = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})/);
-    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    if (m) {
+      const [dia, mes] = formato === 'mdy' ? [m[2], m[1]] : [m[1], m[2]];
+      return `${m[3]}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    }
     return null;
+  }
+
+  /**
+   * Mira una columna de fechas y decide si vienen día/mes/año ('dmy') o mes/día/año ('mdy').
+   * Solo se pasa a 'mdy' cuando algún segundo número es mayor a 12 y ningún primer número lo es;
+   * si es ambiguo (todo menor o igual a 12) o contradictorio, se queda en 'dmy'.
+   */
+  function detectDateFormat(values) {
+    let primeroGrande = false, segundoGrande = false;
+    for (const v of values) {
+      const m = String(v || '').trim().match(/^(\d{1,2})[/.-](\d{1,2})[/.-]\d{4}/);
+      if (!m) continue;
+      if (Number(m[1]) > 12) primeroGrande = true;
+      if (Number(m[2]) > 12) segundoGrande = true;
+    }
+    return segundoGrande && !primeroGrande ? 'mdy' : 'dmy';
   }
 
   /** Código de moneda de 3 letras dentro de un texto: "Importe gastado (ARS)" → "ARS". */
@@ -188,9 +210,10 @@
     if (rows.length < 2) throw new Error('El archivo está vacío.');
     const idx = mapColumns(rows[0], META_COLS, ['fecha', 'campana', 'gasto'], o.mapa);
     const moneda = currencyIn(rows[0][idx.gasto]) || o.moneda || 'USD';
+    const formato = o.formatoFecha || detectDateFormat(rows.slice(1).map((r) => r[idx.fecha]));
     const out = [];
     for (const r of rows.slice(1)) {
-      const fecha = parseDate(r[idx.fecha]);
+      const fecha = parseDate(r[idx.fecha], formato);
       const campana = String(r[idx.campana] || '').trim();
       if (!fecha || !campana) continue; // filas de totales
       out.push({
@@ -208,16 +231,18 @@
    * CSV de ventas (Impultienda, Hotmart, Mercado Pago, Stripe u otra) → [{fecha, campana, anuncio, monto, moneda}].
    * Si hay columna de estado, solo cuenta las ventas aprobadas o pagadas.
    * @param {string} text
-   * @param {{plataforma?: string, moneda?: string, mapa?: Object}} [opts]
+   * @param {{plataforma?: string, moneda?: string, mapa?: Object, formatoFecha?: 'dmy'|'mdy'}} [opts]
+   *   formatoFecha fuerza el orden de las fechas; si falta, se detecta (ver detectDateFormat).
    */
   function parseStoreCSV(text, opts) {
     const o = opts || {};
     const rows = parseCSV(text);
     if (rows.length < 2) throw new Error('El archivo está vacío.');
     const idx = mapColumns(rows[0], storeColumns(o.plataforma), ['fecha', 'monto'], o.mapa);
+    const formato = o.formatoFecha || detectDateFormat(rows.slice(1).map((r) => r[idx.fecha]));
     const out = [];
     for (const r of rows.slice(1)) {
-      const fecha = parseDate(r[idx.fecha]);
+      const fecha = parseDate(r[idx.fecha], formato);
       if (!fecha) continue;
       if (idx.estado >= 0) {
         const st = normHeader(r[idx.estado]);
@@ -235,7 +260,7 @@
     return out;
   }
 
-  const api = { detectDelimiter, parseCSV, normHeader, findColumn, parseNumber, parseDate, currencyIn, parseMetaCSV, parseStoreCSV, PLATAFORMAS, META_COLS };
+  const api = { detectDelimiter, parseCSV, normHeader, findColumn, parseNumber, parseDate, currencyIn, detectDateFormat, parseMetaCSV, parseStoreCSV, PLATAFORMAS, META_COLS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PA_CSV = api;
 })(typeof window !== 'undefined' ? window : globalThis);
