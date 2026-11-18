@@ -184,3 +184,23 @@ test('los datos de ejemplo son estables y traen alertas de los tres colores', ()
   const colores = new Set(calc.evaluarReglas(calc.porAnuncio(d), a.config.reglas).map((u) => u.color));
   assert.ok(colores.has('rojo') && colores.has('verde') && colores.has('amarillo'), `colores: ${[...colores]}`);
 });
+
+test('i18n: cada texto de la pantalla existe en español y en inglés', () => {
+  const { ES, EN, t, setLang } = require('../src/i18n.js');
+  assert.deepEqual(Object.keys(EN).sort(), Object.keys(ES).sort());
+  for (const k of Object.keys(ES)) assert.equal(typeof EN[k], typeof ES[k], `tipo distinto en ${k}`);
+  // Toda clave que usa index.html o src/app.js tiene su texto.
+  const usadas = new Set();
+  for (const f of ['../index.html', '../src/app.js']) {
+    const txt = fs.readFileSync(path.join(__dirname, f), 'utf8');
+    for (const m of txt.matchAll(/\bt\('([a-z0-9_]+)'/g)) usadas.add(m[1]);
+    for (const m of txt.matchAll(/data-i18n(?:-html)?="([a-z0-9_]+)"/g)) usadas.add(m[1]);
+    for (const m of txt.matchAll(/data-i18n-attr="([^"]+)"/g)) m[1].split(';').forEach((p) => usadas.add(p.split(':')[1]));
+  }
+  for (const k of usadas) assert.ok(k in ES, `falta la clave ${k}`);
+  setLang('en');
+  assert.equal(t('importadas', 1, 'Hotmart', 'USD', 0), 'Done: 1 sale imported from Hotmart (USD).');
+  setLang('es');
+  assert.equal(t('importadas', 2, 'Hotmart', 'USD', 0), 'Listo: 2 ventas importadas de Hotmart (USD).');
+  assert.equal(t('no_existe'), 'no_existe');
+});
