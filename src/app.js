@@ -77,6 +77,15 @@
     }
   }
 
+  /** Período anterior del mismo largo, justo antes del actual. Null si el rango no tiene principio y fin. */
+  function rangoAnterior(r) {
+    if (!r.desde || !r.hasta || r.desde > r.hasta) return null;
+    const t = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+    const dias = Math.round((t(r.hasta) - t(r.desde)) / 86400000) + 1;
+    const atras = (iso) => isoDia(new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) - dias));
+    return { desde: atras(r.desde), hasta: atras(r.hasta) };
+  }
+
   function datosDelPeriodo() {
     const r = rango();
     return { r, d: { ofertas: state.config.ofertas, gasto: state.gasto, ventas: state.ventas, desde: r.desde, hasta: r.hasta, tasas: state.config.tasas } };
@@ -105,7 +114,8 @@
     $('hasta').value = r.hasta || '';
     $('leyenda-tono').textContent = `Verde: ROAS de ${num2(cfg.escala)} o más · Amarillo: gana pero todavía no escala · Rojo: ROAS menor a ${num2(cfg.corte)}`;
 
-    renderKpis(res.total, r.etiqueta);
+    const ant = rangoAnterior(r);
+    renderKpis(res.total, r.etiqueta, ant ? resumir({ ...d, desde: ant.desde, hasta: ant.hasta }).total : null);
     renderAlertas(anuncios);
     renderOfertas(res.ofertas, cfg);
     renderGrafico(porDia(d));
@@ -113,15 +123,27 @@
     renderSinAsignar(res.sinAsignar);
   }
 
-  function renderKpis(t, etiqueta) {
-    const k = (label, value, note, cls) => h('div', { class: `kpi ${cls || ''}` },
-      h('span', { class: 'label' }, label), h('span', { class: 'value num' }, value), h('span', { class: 'note' }, note));
+  /** Flecha de cambio contra el período anterior. Sin dato anterior (o en 0) no se muestra nada. */
+  function delta(actual, previo, subeEsBueno) {
+    if (previo == null || actual == null || !(previo > 0)) return null;
+    const pct = ((actual - previo) / previo) * 100;
+    const igual = Math.abs(pct) < 0.05;
+    const cls = igual || subeEsBueno == null ? '' : (pct > 0) === subeEsBueno ? 'up-good' : 'up-bad';
+    const texto = igual ? '= igual que el período anterior'
+      : `${pct > 0 ? '▲' : '▼'} ${num1.format(Math.abs(pct))} % vs período anterior`;
+    return h('span', { class: `delta ${cls}`, title: 'Contra el período anterior del mismo largo' }, texto);
+  }
+  const num1 = new Intl.NumberFormat('es', { maximumFractionDigits: 1 });
+
+  function renderKpis(t, etiqueta, p) {
+    const k = (label, value, note, cls, d) => h('div', { class: `kpi ${cls || ''}` },
+      h('span', { class: 'label' }, label), h('span', { class: 'value num' }, value), d, h('span', { class: 'note' }, note));
     $('kpis').replaceChildren(
       k('Resultado', money(t.resultado), `ingresos − gasto · ${etiqueta}`, `hero ${t.resultado > 0 ? 'pos' : t.resultado < 0 ? 'neg' : ''}`),
-      k('Gasto en Meta', money(t.gasto), etiqueta),
-      k('Ventas', String(t.ventas), 'aprobadas en la tienda'),
-      k('Ingresos', money(t.ingresos), 'incluye ventas adicionales'),
-      k('ROAS', num2(t.roas), 'ingresos ÷ gasto'),
+      k('Gasto en Meta', money(t.gasto), etiqueta, '', p && delta(t.gasto, p.gasto, null)),
+      k('Ventas', String(t.ventas), 'aprobadas en la tienda', '', p && delta(t.ventas, p.ventas, true)),
+      k('Ingresos', money(t.ingresos), 'incluye ventas adicionales', '', p && delta(t.ingresos, p.ingresos, true)),
+      k('ROAS', num2(t.roas), 'ingresos ÷ gasto', '', p && delta(t.roas, p.roas, true)),
     );
   }
 
